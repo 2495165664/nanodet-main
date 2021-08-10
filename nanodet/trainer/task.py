@@ -108,7 +108,7 @@ class TrainingTask(LightningModule):
         return loss
 
     def training_epoch_end(self, outputs: List[Any]) -> None:
-        self.trainer.save_checkpoint(os.path.join(self.cfg.save_dir, "model_last.ckpt"))
+        self.trainer.save_checkpoint(os.path.join(self.cfg.save_dir, "model_last{}.ckpt".format(self.current_epoch + 1)))
         self.lr_scheduler.step()
 
     def validation_step(self, batch, batch_idx):
