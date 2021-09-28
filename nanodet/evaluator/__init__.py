@@ -17,9 +17,8 @@ from .coco_detection import CocoDetectionEvaluator
 
 
 def build_evaluator(cfg, dataset):
-    evaluator_cfg = copy.deepcopy(cfg)
-    name = evaluator_cfg.pop("name")
-    if name == "CocoDetectionEvaluator":
+    if cfg.evaluator.name == 'CocoDetectionEvaluator':
         return CocoDetectionEvaluator(dataset)
     else:
         raise NotImplementedError
+

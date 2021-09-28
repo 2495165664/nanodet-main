@@ -13,7 +13,7 @@ def generate_ouput_names(head_cfg):
     return cls_names + dis_names
 
 
-def main(config, model_path, output_path, input_shape=(320, 320)):   # TODO: input_shape具体看yml里input
+def main(config, model_path, output_path, input_shape=(320, 320)):  # TODO: input_shape具体看yml里input
     logger = Logger(-1, config.save_dir, False)
     model = build_model(config.model)
     checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
@@ -34,7 +34,7 @@ def main(config, model_path, output_path, input_shape=(320, 320)):   # TODO: inp
                       output_path,
                       verbose=True,
                       keep_initializers_as_inputs=True,
-                      opset_version=11,
+                      opset_version=9,
                       output_names=output_names)
     logger.log('finished exporting onnx ')
 
@@ -45,15 +45,16 @@ def parse_args():
         description='Convert .pth model to onnx.')
     parser.add_argument('--cfg_path',
                         type=str,
-                        default="../config/dateset.yml",
+                        default="../config/nandoet_ebike_ghostnet.yml",
                         help='Path to .yml config file.')
     parser.add_argument('--model_path',
                         type=str,
-                        default="../models/person_v1.3.ckpt",
+                        default="../models/ghosenet.ckpt",
+                        # default="../models/model_best_v1.6.2.ckpt",
                         help='Path to .ckpt model.')
     parser.add_argument('--out_path',
                         type=str,
-                        default='../models/person_v1.3.onnx',
+                        default='../models/ghostnet.onnx',
                         help='Onnx model output path.')
     parser.add_argument('--input_shape',
                         type=str,

@@ -16,7 +16,7 @@ image_ext = ['jpg', 'jpeg', 'webp', 'bmp', 'png']
 video_ext = ['mp4', 'mov', 'avi', 'mkv']
 videos_ext = ['.mp4', '.mov', '.avi', '.mkv']
 
-threshold = 0.2
+threshold = 0.5
 
 
 def get_path_list():
@@ -35,11 +35,11 @@ def get_path_list():
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('demo', default='image', help='demo type, eg. image, video and webcam')
-    parser.add_argument('--config', default="../config/ebike_v1.0.yml", help='model config file path')
-    parser.add_argument('--model', default="./ebike_v1.1.ckpt", help='model file path')
-    parser.add_argument('--path', default=r'C:\Users\gzy\Desktop\test_videos', help='path to images or video')
+    parser.add_argument('--config', default="../models/nanodet_ebike_1.0x_v1.6.0_restart.yml", help='model config file path')
+    parser.add_argument('--model', default="../models/model_last_v1.6.0_restart_290.ckpt", help='model file path')
+    parser.add_argument('--path', default='/data1/wl/videos/Onlyperson', help='path to images or video')
     parser.add_argument('--camid', type=int, default=0, help='webcam demo camera id')
-    parser.add_argument('--save_result', default=r"C:\Users\gzy\Desktop\res", action='store_false',
+    parser.add_argument('--save_result', default="/data1/wl/detect/v1.6.2", action='store_false',
                         help='whether to save the inference result of image/video')
     args = parser.parse_args()
 

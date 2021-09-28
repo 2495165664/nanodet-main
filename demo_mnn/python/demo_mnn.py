@@ -1,108 +1,31 @@
-
-# -*- coding: utf-8 -*-
-
-'''
-name:       demo_mnn.py
-date:       2020-12-16 11:21:07
-Env.:       Python 3.7.3, WIN 10
-'''
-
 import argparse
-from pathlib import Path
 from abc import ABCMeta, abstractmethod
+from pathlib import Path
 
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+import numpy as np
 from scipy.special import softmax
-
+from tqdm import tqdm
 
 # Copy from nanodet/util/visualization.py
-_COLORS = np.array(
-    [
-        0.000, 0.447, 0.741,
-        0.850, 0.325, 0.098,
-        0.929, 0.694, 0.125,
-        0.494, 0.184, 0.556,
-        0.466, 0.674, 0.188,
-        0.301, 0.745, 0.933,
-        0.635, 0.078, 0.184,
-        0.300, 0.300, 0.300,
-        0.600, 0.600, 0.600,
-        1.000, 0.000, 0.000,
-        1.000, 0.500, 0.000,
-        0.749, 0.749, 0.000,
-        0.000, 1.000, 0.000,
-        0.000, 0.000, 1.000,
-        0.667, 0.000, 1.000,
-        0.333, 0.333, 0.000,
-        0.333, 0.667, 0.000,
-        0.333, 1.000, 0.000,
-        0.667, 0.333, 0.000,
-        0.667, 0.667, 0.000,
-        0.667, 1.000, 0.000,
-        1.000, 0.333, 0.000,
-        1.000, 0.667, 0.000,
-        1.000, 1.000, 0.000,
-        0.000, 0.333, 0.500,
-        0.000, 0.667, 0.500,
-        0.000, 1.000, 0.500,
-        0.333, 0.000, 0.500,
-        0.333, 0.333, 0.500,
-        0.333, 0.667, 0.500,
-        0.333, 1.000, 0.500,
-        0.667, 0.000, 0.500,
-        0.667, 0.333, 0.500,
-        0.667, 0.667, 0.500,
-        0.667, 1.000, 0.500,
-        1.000, 0.000, 0.500,
-        1.000, 0.333, 0.500,
-        1.000, 0.667, 0.500,
-        1.000, 1.000, 0.500,
-        0.000, 0.333, 1.000,
-        0.000, 0.667, 1.000,
-        0.000, 1.000, 1.000,
-        0.333, 0.000, 1.000,
-        0.333, 0.333, 1.000,
-        0.333, 0.667, 1.000,
-        0.333, 1.000, 1.000,
-        0.667, 0.000, 1.000,
-        0.667, 0.333, 1.000,
-        0.667, 0.667, 1.000,
-        0.667, 1.000, 1.000,
-        1.000, 0.000, 1.000,
-        1.000, 0.333, 1.000,
-        1.000, 0.667, 1.000,
-        0.333, 0.000, 0.000,
-        0.500, 0.000, 0.000,
-        0.667, 0.000, 0.000,
-        0.833, 0.000, 0.000,
-        1.000, 0.000, 0.000,
-        0.000, 0.167, 0.000,
-        0.000, 0.333, 0.000,
-        0.000, 0.500, 0.000,
-        0.000, 0.667, 0.000,
-        0.000, 0.833, 0.000,
-        0.000, 1.000, 0.000,
-        0.000, 0.000, 0.167,
-        0.000, 0.000, 0.333,
-        0.000, 0.000, 0.500,
-        0.000, 0.000, 0.667,
-        0.000, 0.000, 0.833,
-        0.000, 0.000, 1.000,
-        0.000, 0.000, 0.000,
-        0.143, 0.143, 0.143,
-        0.286, 0.286, 0.286,
-        0.429, 0.429, 0.429,
-        0.571, 0.571, 0.571,
-        0.714, 0.714, 0.714,
-        0.857, 0.857, 0.857,
-        0.000, 0.447, 0.741,
-        0.314, 0.717, 0.741,
-        0.50, 0.5, 0
-    ]
-).astype(np.float32).reshape(-1, 3)
+_COLORS = (
+    np.array(
+        [
+            0.000,
+            0.447,
+            0.741,
+            0.850,
+            0.325,
+            0.098,
+            0.929,
+            0.694,
+            0.125
+        ]
+    )
+    .astype(np.float32)
+    .reshape(-1, 3)
+)
 
 
 def get_resize_matrix(raw_shape, dst_shape, keep_ratio):
@@ -118,8 +41,8 @@ def get_resize_matrix(raw_shape, dst_shape, keep_ratio):
     Rs = np.eye(3)
     if keep_ratio:
         C = np.eye(3)
-        C[0, 2] = - r_w / 2
-        C[1, 2] = - r_h / 2
+        C[0, 2] = -r_w / 2
+        C[1, 2] = -r_h / 2
 
         if r_w / r_h < d_w / d_h:
             ratio = d_h / r_h
@@ -147,14 +70,14 @@ def warp_boxes(boxes, M, width, height):
         # warp points
         xy = np.ones((n * 4, 3))
         xy[:, :2] = boxes[:, [0, 1, 2, 3, 0, 3, 2, 1]].reshape(
-            n * 4, 2)  # x1y1, x2y2, x1y2, x2y1
+            n * 4, 2
+        )  # x1y1, x2y2, x1y2, x2y1
         xy = xy @ M.T  # transform
         xy = (xy[:, :2] / xy[:, 2:3]).reshape(n, 8)  # rescale
         # create new boxes
         x = xy[:, [0, 2, 4, 6]]
         y = xy[:, [1, 3, 5, 7]]
-        xy = np.concatenate(
-            (x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
+        xy = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
         # clip boxes
         xy[:, [0, 2]] = xy[:, [0, 2]].clip(0, width)
         xy[:, [1, 3]] = xy[:, [1, 3]].clip(0, height)
@@ -171,28 +94,27 @@ def overlay_bbox_cv(img, all_box, class_names):
     all_box.sort(key=lambda v: v[5])
     for box in all_box:
         label, x0, y0, x1, y1, score = box
-        if score >= 0.8:
-            # color = self.cmap(i)[:3]
-            print(label)
-            color = (_COLORS[label] * 255).astype(np.uint8).tolist()
-            text = '{}:{:.1f}%'.format(class_names[label], score * 100)
-            txt_color=(0, 0, 0) if np.mean(_COLORS[label]) > 0.5 else (255, 255, 255)
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            txt_size = cv2.getTextSize(text, font, 0.5, 2)[0]
-            cv2.rectangle(img, (x0, y0), (x1, y1), color, 2)
+        # color = self.cmap(i)[:3]
+        color = (_COLORS[label] * 255).astype(np.uint8).tolist()
+        text = "{}:{:.1f}%".format(class_names[label], score * 100)
+        txt_color = (0, 0, 0) if np.mean(_COLORS[label]) > 0.5 else (255, 255, 255)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        txt_size = cv2.getTextSize(text, font, 0.5, 2)[0]
+        cv2.rectangle(img, (x0, y0), (x1, y1), color, 2)
 
-            cv2.rectangle(img,
-                          (x0, y0 - txt_size[1] - 1),
-                          (x0 + txt_size[0] + txt_size[1], y0 - 1), color, -1)
-            cv2.putText(img, text, (x0, y0-1),
-                        font, 0.5, txt_color, thickness=1)
-            print(score)
+        cv2.rectangle(
+            img,
+            (x0, y0 - txt_size[1] - 1),
+            (x0 + txt_size[0] + txt_size[1], y0 - 1),
+            color,
+            -1,
+        )
+        cv2.putText(img, text, (x0, y0 - 1), font, 0.5, txt_color, thickness=1)
     return img
 
 
 def hard_nms(box_scores, iou_threshold, top_k=-1, candidate_size=200):
     """
-
     Args:
         box_scores (N, 5): boxes in corner-form and probabilities.
         iou_threshold: intersection over union threshold.
@@ -229,7 +151,6 @@ def hard_nms(box_scores, iou_threshold, top_k=-1, candidate_size=200):
 
 def iou_of(boxes0, boxes1, eps=1e-5):
     """Return intersection-over-union (Jaccard index) of boxes.
-
     Args:
         boxes0 (N, 4): ground truth boxes.
         boxes1 (N or 1, 4): predicted boxes.
@@ -248,11 +169,9 @@ def iou_of(boxes0, boxes1, eps=1e-5):
 
 def area_of(left_top, right_bottom):
     """Compute the areas of rectangles given two corners.
-
     Args:
         left_top (N, 2): left top corner.
         right_bottom (N, 2): right bottom corner.
-
     Returns:
         area (N): return the area.
     """
@@ -261,8 +180,16 @@ def area_of(left_top, right_bottom):
 
 
 class NanoDetABC(metaclass=ABCMeta):
-    def __init__(self, input_shape=[320, 320], reg_max=7, strides=[8, 16, 32], prob_threshold=0.4,
-                 iou_threshold=0.5, num_candidate=1000, top_k=-1):
+    def __init__(
+        self,
+        input_shape=[320, 320],
+        reg_max=7,
+        strides=[8, 16, 32],
+        prob_threshold=0.4,
+        iou_threshold=0.3,
+        num_candidate=1000,
+        top_k=-1,
+    ):
         self.strides = strides
         self.input_shape = input_shape
         self.reg_max = reg_max
@@ -274,7 +201,9 @@ class NanoDetABC(metaclass=ABCMeta):
         self.img_std = [57.375, 57.12, 58.395]
         self.input_size = (self.input_shape[1], self.input_shape[0])
         self.class_names = [
-            'person'
+            "ebike",
+            "bike",
+            "other",
         ]
 
     def preprocess(self, img):
@@ -316,7 +245,7 @@ class NanoDetABC(metaclass=ABCMeta):
 
             # top K candidate
             topk_idx = np.argsort(score.max(axis=1))[::-1]
-            topk_idx = topk_idx[:self.num_candidate]
+            topk_idx = topk_idx[: self.num_candidate]
             center = center[topk_idx]
             score = score[topk_idx]
             box_distance = box_distance[topk_idx]
@@ -353,8 +282,13 @@ class NanoDetABC(metaclass=ABCMeta):
 
         # resize output boxes
         picked_box_probs[:, :4] = warp_boxes(
-            picked_box_probs[:, :4], np.linalg.inv(ResizeM), raw_shape[1], raw_shape[0])
-        return picked_box_probs[:, :4].astype(np.int32), np.array(picked_labels), picked_box_probs[:, 4]
+            picked_box_probs[:, :4], np.linalg.inv(ResizeM), raw_shape[1], raw_shape[0]
+        )
+        return (
+            picked_box_probs[:, :4].astype(np.int32),
+            np.array(picked_labels),
+            picked_box_probs[:, 4],
+        )
 
     @abstractmethod
     def infer_image(self, img_input):
@@ -364,33 +298,45 @@ class NanoDetABC(metaclass=ABCMeta):
         raw_shape = img.shape
         img_input, ResizeM = self.preprocess(img)
         scores, raw_boxes = self.infer_image(img_input)
-        if scores[0].ndim == 1: # handling num_classes=1 case
-            scores = [x[:,None] for x in scores]
+        if scores[0].ndim == 1:  # handling num_classes=1 case
+            scores = [x[:, None] for x in scores]
         bbox, label, score = self.postprocess(scores, raw_boxes, ResizeM, raw_shape)
         return bbox, label, score
 
     def draw_box(self, raw_img, bbox, label, score):
         img = raw_img.copy()
-        all_box = [[x,]+y+[z,] for x,y,z in zip(label, bbox.tolist(), score)]
+        all_box = [
+            [
+                x,
+            ]
+            + y
+            + [
+                z,
+            ]
+            for x, y, z in zip(label, bbox.tolist(), score)
+        ]
         img_draw = overlay_bbox_cv(img, all_box, self.class_names)
         return img_draw
-    
+
     def detect_folder(self, img_fold, result_path):
         img_fold = Path(img_fold)
         result_path = Path(result_path)
         result_path.mkdir(parents=True, exist_ok=True)
 
         img_name_list = filter(
-            lambda x: str(x).endswith('.png') or str(x).endswith('.jpg') or str(x).endswith('.bmp'),
-            img_fold.iterdir()
+            lambda x: str(x).endswith(".png") or str(x).endswith(".jpg") or str(x).endswith(".bmp"),
+            img_fold.iterdir(),
         )
         img_name_list = list(img_name_list)
-        print(f'find {len(img_name_list)} images')
+        print(f"find {len(img_name_list)} images")
 
         for img_path in img_name_list:
-            print("{}:".format(img_path),end=' ')
+            print(img_path)
             img = cv2.imread(str(img_path))
             bbox, label, score = self.detect(img)
+            print(bbox)
+            print(score)
+            print("*"*50)
             img_draw = self.draw_box(img, bbox, label, score)
             save_path = str(result_path / img_path.name.replace(".png", ".jpg"))
             cv2.imwrite(save_path, img_draw)
@@ -401,8 +347,8 @@ class NanoDetMNN(NanoDetABC):
 
     def __init__(self, model_path, *args, **kwargs):
         super(NanoDetMNN, self).__init__(*args, **kwargs)
-        print(f'Using MNN as inference backend')
-        print(f'Using weight: {model_path}')
+        print("Using MNN as inference backend")
+        print(f"Using weight: {model_path}")
 
         # load model
         self.model_path = model_path
@@ -415,15 +361,29 @@ class NanoDetMNN(NanoDetABC):
             (1, 3, self.input_size[1], self.input_size[0]),
             self.MNNlib.Halide_Type_Float,
             img_input,
-            self.MNNlib.Tensor_DimensionType_Caffe
+            self.MNNlib.Tensor_DimensionType_Caffe,
         )
         self.input_tensor.copyFrom(tmp_input)
         self.interpreter.runSession(self.session)
-        score_out_name = ["cls_pred_stride_8", "cls_pred_stride_16", "cls_pred_stride_32"]
-        scores = [self.interpreter.getSessionOutput(self.session, x).getData() for x in score_out_name]
-        scores = [np.reshape(x, (-1, 1)) for x in scores]
-        boxes_out_name = ["dis_pred_stride_8", "dis_pred_stride_16", "dis_pred_stride_32"]
-        raw_boxes = [self.interpreter.getSessionOutput(self.session, x).getData() for x in boxes_out_name]
+        score_out_name = [
+            "cls_pred_stride_8",
+            "cls_pred_stride_16",
+            "cls_pred_stride_32",
+        ]
+        scores = [
+            self.interpreter.getSessionOutput(self.session, x).getData()
+            for x in score_out_name
+        ]
+        scores = [np.reshape(x, (-1, 3)) for x in scores]
+        boxes_out_name = [
+            "dis_pred_stride_8",
+            "dis_pred_stride_16",
+            "dis_pred_stride_32",
+        ]
+        raw_boxes = [
+            self.interpreter.getSessionOutput(self.session, x).getData()
+            for x in boxes_out_name
+        ]
         raw_boxes = [np.reshape(x, (-1, 32)) for x in raw_boxes]
         return scores, raw_boxes
 
@@ -433,8 +393,8 @@ class NanoDetONNX(NanoDetABC):
 
     def __init__(self, model_path, *args, **kwargs):
         super(NanoDetONNX, self).__init__(*args, **kwargs)
-        print(f'Using ONNX as inference backend')
-        print(f'Using weight: {model_path}')
+        print("Using ONNX as inference backend")
+        print(f"Using weight: {model_path}")
 
         # load model
         self.model_path = model_path
@@ -456,8 +416,8 @@ class NanoDetTorch(NanoDetABC):
         from nanodet.util import Logger, cfg, load_config, load_model_weight
 
         super(NanoDetTorch, self).__init__(*args, **kwargs)
-        print(f'Using PyTorch as inference backend')
-        print(f'Using weight: {model_path}')
+        print("Using PyTorch as inference backend")
+        print(f"Using weight: {model_path}")
 
         # load model
         self.model_path = model_path
@@ -465,37 +425,55 @@ class NanoDetTorch(NanoDetABC):
         load_config(cfg, cfg_path)
         self.logger = Logger(-1, cfg.save_dir, False)
         self.model = build_model(cfg.model)
-        checkpoint = self.torch.load(model_path, map_location=lambda storage, loc: storage)
+        checkpoint = self.torch.load(
+            model_path, map_location=lambda storage, loc: storage
+        )
         load_model_weight(self.model, checkpoint, self.logger)
 
     def infer_image(self, img_input):
         self.model.train(False)
         with self.torch.no_grad():
             inference_results = self.model(self.torch.from_numpy(img_input))
-        scores = [x.permute(0, 2, 3, 1).reshape((-1, 1)).sigmoid().detach().numpy() for x in inference_results[0]]
-        raw_boxes = [x.permute(0, 2, 3, 1).reshape((-1, 32)).detach().numpy() for x in inference_results[1]]
+        scores = [
+            x.permute(0, 2, 3, 1).reshape((-1, 3)).sigmoid().detach().numpy()
+            for x in inference_results[0]
+        ]
+        raw_boxes = [
+            x.permute(0, 2, 3, 1).reshape((-1, 32)).detach().numpy()
+            for x in inference_results[1]
+        ]
         return scores, raw_boxes
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', dest='model_path', type=str, default='../../models/person_v1.0.mnn')
-    parser.add_argument('--cfg_path', dest='cfg_path', type=str, default='../../config/dateset.yml')
-    parser.add_argument('--img_fold', dest='img_fold', type=str, default='/data1/wl/train_data/p/val/imgs')
-    parser.add_argument('--result_fold', dest='result_fold', type=str, default='/data1/wl/detect/images/person')
-    parser.add_argument('--input_shape', dest='input_shape', nargs=2, type=int, default=[320, 320])
-    parser.add_argument('--backend', choices=['MNN', 'ONNX', 'torch'], default='MNN')
+    parser.add_argument(
+        "--model_path", dest="model_path", type=str, default="../../models/ebike_v1.6_restart.mnn"
+    )
+    parser.add_argument(
+        "--cfg_path", dest="cfg_path", type=str, default="../../models/nanodet_ebike_1.0x_v1.6.0_restart.yml"
+    )
+    parser.add_argument("--img_fold", dest="img_fold", type=str, default="/home/room/data1/wl/tmp_dedata")
+    parser.add_argument(
+        "--result_fold", dest="result_fold", type=str, default="/home/room/data1/wl/res"
+    )
+    parser.add_argument(
+        "--input_shape", dest="input_shape", nargs=2, type=int, default=[320, 320]
+    )
+    parser.add_argument("--backend", choices=["MNN", "ONNX", "torch"], default="MNN")
     args = parser.parse_args()
 
-    print(f'Detecting {args.img_fold}')
+    print(f"Detecting {args.img_fold}")
 
     # load detector
-    if args.backend == 'MNN':
+    if args.backend == "MNN":
         detector = NanoDetMNN(args.model_path, input_shape=args.input_shape)
-    elif args.backend == 'ONNX':
+    elif args.backend == "ONNX":
         detector = NanoDetONNX(args.model_path, input_shape=args.input_shape)
-    elif args.backend == 'torch':
-        detector = NanoDetTorch(args.model_path, args.cfg_path, input_shape=args.input_shape)
+    elif args.backend == "torch":
+        detector = NanoDetTorch(
+            args.model_path, args.cfg_path, input_shape=args.input_shape
+        )
     else:
         raise ValueError
 
@@ -504,14 +482,14 @@ def main():
 
 
 def test_one():
-    detector = NanoDetMNN('../nanodet.mnn')
-    img = cv2.imread('./data/2.jpg')
+    detector = NanoDetMNN("./weight/nanodet-320.mnn")
+    img = cv2.imread("./data/2.jpg")
     bbox, label, score = detector.detect(img)
     img_draw = detector.draw_box(img, bbox, label, score)
     plt.imshow(img_draw[..., ::-1])
-    plt.axis('off')
+    plt.axis("off")
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

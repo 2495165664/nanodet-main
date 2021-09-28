@@ -31,7 +31,7 @@ from nanodet.evaluator import build_evaluator
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('config', help='train config file path')
+    parser.add_argument('--config',default='../config/nanodet_ebike_mnasnet.yml' , help='train config file path')
     parser.add_argument('--local_rank', default=-1, type=int,
                         help='node rank for distributed training')
     parser.add_argument('--seed', type=int, default=None,

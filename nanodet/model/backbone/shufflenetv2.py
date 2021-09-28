@@ -211,11 +211,14 @@ class ShuffleNetV2(nn.Module):
 
 
 if __name__ == '__main__':
-    model = ShuffleNetV2()
+    from torchsummary import summary
+    model = ShuffleNetV2(model_size="1.0x")
+    model = model.to(torch.device("cuda:0"))
+    summary(model, input_size=(3, 320, 320))
 
     x = torch.randn(size=(1, 3, 320, 320))
+    x = x.to(torch.device("cuda:0"))
     x = model(x)
-    print(model)
     for i in x:
         print(i.shape)
     # print(x[0].shape)

@@ -15,7 +15,10 @@ import warnings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+# from torchsummary import summary
+# import sys
+# sys.path.append("../")
+# from module.activation import act_layers
 from ..module.activation import act_layers
 
 
@@ -346,3 +349,18 @@ class GhostNet(nn.Module):
             if url is not None:
                 state_dict = torch.hub.load_state_dict_from_url(url, progress=True)
                 self.load_state_dict(state_dict, strict=False)
+
+
+# if __name__ == '__main__':
+#     from torchsummary import summary
+#     model = GhostNet(width_mult=0.6, pretrain=False)
+#     model = model.to(torch.device("cuda:0"))
+#     summary(model, input_size=(3, 320, 320))
+#
+#     x = torch.randn(size=(1, 3, 320, 320))
+#     x = x.to(torch.device("cuda:0"))
+#     x = model(x)
+#     for j, i in enumerate(x):
+#         print(j , end=" >> ")
+#         print(i.shape)
+#     # print(x[0].shape)

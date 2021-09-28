@@ -29,7 +29,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('demo', default='image', help='demo type, eg. image, video and webcam')
     parser.add_argument('--config', default="../config/person.yml", help='model config file path')
-    parser.add_argument('--model', default="../models/person_v0.1.ckpt", help='model file path')
+    parser.add_argument('--model', default="", help='model file path')
     parser.add_argument('--path', default='/data1/wl/train_data/p/val/imgs', help='path to images or video')
     parser.add_argument('--camid', type=int, default=0, help='webcam demo camera id')
     parser.add_argument('--save_result', default="/data1/wl/detect/images/preson", action='store_false', help='whether to save the inference result of image/video')

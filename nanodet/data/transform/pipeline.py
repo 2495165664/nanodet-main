@@ -16,7 +16,8 @@ import functools
 
 from .color import color_aug_and_norm
 from .warp import warp_and_resize
-
+from matplotlib import pyplot as plt
+import cv2
 
 class Pipeline:
     def __init__(self, cfg, keep_ratio):
@@ -26,6 +27,16 @@ class Pipeline:
         self.color = functools.partial(color_aug_and_norm, kwargs=cfg)
 
     def __call__(self, meta, dst_shape):
+        # cvColor_image = cv2.cvtColor(meta['img'], cv2.COLOR_BGR2RGB)
+        # plt.imshow(cvColor_image)
+        # plt.show()
         meta = self.warp(meta=meta, dst_shape=dst_shape)
         meta = self.color(meta=meta)
+        # for box in meta['gt_bboxes']:
+        #     print(list(box))
+        #     box = list(box)
+        #     cv2.rectangle(meta['img'], (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (255, 0, 0), 3)
+        # cvColor_image = cv2.cvtColor(meta['img'], cv2.COLOR_BGR2RGB)
+        # plt.imshow(cvColor_image)
+        # plt.show()
         return meta

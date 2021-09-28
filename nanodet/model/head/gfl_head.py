@@ -80,6 +80,7 @@ class GFLHead(nn.Module):
                     in QFL setting. Default: 16.
     :param kwargs:
     """
+
     def __init__(self,
                  num_classes,
                  loss,
@@ -511,8 +512,10 @@ class GFLHead(nn.Module):
             result_s.append(det_results)
         return result_s
 
-    def show_result(self, img, dets, class_names, score_thres=0.3, show=True, draw=True, crop=False, xml=False, filename=None):
-        result = overlay_bbox_cv(img, dets, class_names, score_thresh=score_thres, draw=draw, crop=crop, xml=xml, file_name=filename)
+    def show_result(self, img, dets, class_names, score_thres=0.3, show=True, draw=True, crop=False, xml=False,
+                    filename=None):
+        result = overlay_bbox_cv(img, dets, class_names, score_thresh=score_thres, draw=draw, crop=crop, xml=xml,
+                                 file_name=filename)
         if show:
             cv2.imshow('det', result)
         return result
@@ -679,4 +682,3 @@ class GFLHead(nn.Module):
         cells_cx = (grid_cells[:, 2] + grid_cells[:, 0]) / 2
         cells_cy = (grid_cells[:, 3] + grid_cells[:, 1]) / 2
         return torch.stack([cells_cx, cells_cy], dim=-1)
-

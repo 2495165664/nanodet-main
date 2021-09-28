@@ -20,8 +20,10 @@ import warnings
 from typing import Any, List
 
 import torch
+import torch.distributed as dist
 from pytorch_lightning import LightningModule
 
+from nanodet.data.batch_process import stack_batch_img
 from nanodet.util import gather_results, mkdir
 
 from ..model.arch import build_model
@@ -45,12 +47,21 @@ class TrainingTask(LightningModule):
         self.log_style = "NanoDet"  # Log style. Choose between 'NanoDet' or 'Lightning'
         # TODO: use callback to log
 
+    def _preprocess_batch_input(self, batch):
+        batch_imgs = batch["img"]
+        if isinstance(batch_imgs, list):
+            batch_imgs = [img.to(self.device) for img in batch_imgs]
+            batch_img_tensor = stack_batch_img(batch_imgs, divisible=32)
+            batch["img"] = batch_img_tensor
+        return batch
+
     def forward(self, x):
         x = self.model(x)
         return x
 
     @torch.no_grad()
     def predict(self, batch, batch_idx=None, dataloader_idx=None):
+        batch = self._preprocess_batch_input(batch)
         preds = self.forward(batch["img"])
         results = self.model.head.post_process(preds, batch)
         return results
@@ -60,6 +71,7 @@ class TrainingTask(LightningModule):
             self.lr_scheduler.last_epoch = self.current_epoch - 1
 
     def training_step(self, batch, batch_idx):
+        batch = self._preprocess_batch_input(batch)
         preds, loss, loss_states = self.model.forward_train(batch)
 
         # log train losses
@@ -108,10 +120,11 @@ class TrainingTask(LightningModule):
         return loss
 
     def training_epoch_end(self, outputs: List[Any]) -> None:
-        self.trainer.save_checkpoint(os.path.join(self.cfg.save_dir, "model_last{}.ckpt".format(self.current_epoch + 1)))
+        self.trainer.save_checkpoint(os.path.join(self.cfg.save_dir, "model_last.ckpt"))
         self.lr_scheduler.step()
 
     def validation_step(self, batch, batch_idx):
+        batch = self._preprocess_batch_input(batch)
         preds, loss, loss_states = self.model.forward_train(batch)
 
         if self.log_style == "Lightning":
@@ -157,12 +170,15 @@ class TrainingTask(LightningModule):
         and save best model.
         Args:
             validation_step_outputs: A list of val outputs
-
         """
         results = {}
         for res in validation_step_outputs:
             results.update(res)
-        all_results = gather_results(results) if self.trainer.use_ddp else results
+        all_results = (
+            gather_results(results)
+            if dist.is_available() and dist.is_initialized()
+            else results
+        )
         if all_results:
             eval_results = self.evaluator.evaluate(
                 all_results, self.cfg.save_dir, rank=self.local_rank
@@ -212,7 +228,11 @@ class TrainingTask(LightningModule):
         results = {}
         for res in test_step_outputs:
             results.update(res)
-        all_results = gather_results(results) if self.trainer.use_ddp else results
+        all_results = (
+            gather_results(results)
+            if dist.is_available() and dist.is_initialized()
+            else results
+        )
         if all_results:
             res_json = self.evaluator.results2json(all_results)
             json_path = os.path.join(self.cfg.save_dir, "results.json")
@@ -233,7 +253,6 @@ class TrainingTask(LightningModule):
         """
         Prepare optimizer and learning-rate scheduler
         to use in optimization.
-
         Returns:
             optimizer
         """
@@ -316,7 +335,6 @@ class TrainingTask(LightningModule):
             phase: 'Train' or 'Val'
             value: Value to record
             step: Step value to record
-
         """
         if self.local_rank < 1:
             self.logger.experiment.add_scalars(tag, {phase: value}, step)

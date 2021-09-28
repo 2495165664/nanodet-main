@@ -10,6 +10,20 @@
             </list>
           </settings>
         </remote-mappings>
+        <remote-mappings server-id="python@sftp://wl@192.168.2.189:22/root/anaconda3/envs/torch_wl/bin/python">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$" remote-root="/data1/wl/nanodet" />
+            </list>
+          </settings>
+        </remote-mappings>
+        <remote-mappings server-id="python@sftp://wl@192.168.2.189:22/root/anaconda3/envs/nanodet_tyk/bin/python3">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$" remote-root="/data1/wl/nanodet" />
+            </list>
+          </settings>
+        </remote-mappings>
       </list>
     </list>
   </component>
